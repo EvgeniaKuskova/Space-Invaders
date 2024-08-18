@@ -37,6 +37,10 @@ class Bullet(Object):
         self.is_shutting = False
         self.speed = 15
 
+    def reset(self, ship):
+        self.is_shutting = False
+        self.y = ship.y - self.height
+
 
 class Bunker(Object):
     def __init__(self, x: int):
