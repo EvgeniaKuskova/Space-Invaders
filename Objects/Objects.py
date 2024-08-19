@@ -16,9 +16,13 @@ class Object:
         self.height = self.scaled_image.get_height()
         self.x = 0
         self.y = 0
+        self.rect = None
 
     def draw(self, screen):
         screen.blit(self.scaled_image, (int(self.x), int(self.y)))
+
+    def get_rect(self):
+        self.rect = self.scaled_image.get_rect(topleft=(self.x, self.y))
 
 
 class Ship(Object):
@@ -50,9 +54,10 @@ class Bunker(Object):
 
 
 class Enemy(Object):
-    def __init__(self, path: str, x: int, y: int, speed: int):
+    def __init__(self, path: str, x: int, y: int, speed: int, cost: int):
         super().__init__(path, SCALE)
         self.x = x
         self.y = y
         self.speed = speed
         self.rect = self.scaled_image.get_rect(topleft=(self.x, self.y))
+        self.cost = cost
