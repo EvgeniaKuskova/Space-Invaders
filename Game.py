@@ -9,7 +9,7 @@ SCALE = 4
 
 
 class Game:
-    def __init__(self):
+    def __init__(self, score: int):
         pygame.init()
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
         pygame.display.set_caption("Space Invaders")
@@ -37,7 +37,7 @@ class Game:
         pygame.time.set_timer(self.enemy_timer, 700)
         pygame.time.set_timer(self.enemy_bullet_timer, 2000)
 
-        self.score = 0
+        self.score = score
         self.gameplay = True
 
         self.hearts = []
@@ -65,10 +65,10 @@ class Game:
                 self.check_keys()
                 self.move_bullet()
                 self.bullet.get_rect()
-                self.check_defeat_enemy()
                 self.check_conflict_bullet_and_bunker()
                 self.check_kill_ship()
                 self.check_enemy_direction()
+                self.check_defeat_enemy()
 
                 self.screen.blit(self.text_score, (40, 20))
                 self.screen.blit(self.font.render(str(self.score), True, 'white'),
@@ -88,7 +88,7 @@ class Game:
                 text_restart_rect = self.text_restart.get_rect(topleft=(195, 400))
                 mouse = pygame.mouse.get_pos()
                 if text_restart_rect.collidepoint(mouse) and pygame.mouse.get_pressed()[0] == 1:
-                    self.__init__()
+                    self.__init__(0)
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -130,6 +130,9 @@ class Game:
 
         for index in sorted(enemies_to_remove, reverse=True):
             del self.enemies[index]
+
+        if not self.enemies:
+            self.__init__(self.score)
 
     def check_conflict_bullet_and_bunker(self):
         self.enemy_bullet.get_rect()

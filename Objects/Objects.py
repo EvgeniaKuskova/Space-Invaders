@@ -27,8 +27,7 @@ class Object:
 
 class Ship(Object):
     def __init__(self):
-        super().__init__('images/ship.png', SCALE, 0, 392)
-        self.x = WIDTH / 2 - self.width / 2
+        super().__init__('images/ship.png', SCALE, 76, 392)
         self.speed = 5
 
     def reset(self, clock):
