@@ -62,3 +62,19 @@ class Enemy(Object):
         self.speed = speed
         self.rect = self.scaled_image.get_rect(topleft=(self.x, self.y))
         self.cost = cost
+        self.enemy_timer = pygame.USEREVENT + 1
+        pygame.time.set_timer(self.enemy_timer, 600)
+
+
+class MysteryShip(Enemy):
+    def __init__(self):
+        super().__init__('images/mystery_ship.png', WIDTH, 100, 3, 40)
+        self.is_moving = False
+
+    def draw(self, screen):
+        if self.x + self.width > 0:
+            self.x -= self.speed
+            screen.blit(self.scaled_image, (int(self.x), int(self.y)))
+        else:
+            self.is_moving = False
+

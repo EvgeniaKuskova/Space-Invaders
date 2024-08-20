@@ -3,7 +3,7 @@ from Game import Game
 
 if __name__ == '__main__':
     try:
-        game = Game(0)
+        game = Game(0, 0)
         game.run()
         pygame.quit()
     except Exception as e:
