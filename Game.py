@@ -8,11 +8,21 @@ WIDTH = 700
 HEIGHT = 500
 FPS = 30
 SCALE = 4
-LEVEL = {0: [2500, 2, 8],
-         1: [2500, 2, 10],
-         2: [2000, 3, 10],
-         3: [1500, 3, 10],
-         4: [1000, 3, 10]}
+LEVEL = {0: {"speed": 2500,
+             "rows": 2,
+             "cols": 8},
+         1: {"speed": 2500,
+             "rows": 2,
+             "cols": 10},
+         2: {"speed": 2000,
+             "rows": 3,
+             "cols": 10},
+         3: {"speed": 1500,
+             "rows": 3,
+             "cols": 10},
+         4: {"speed": 1000,
+             "rows": 3,
+             "cols": 10}}
 
 
 class Game:
@@ -24,12 +34,12 @@ class Game:
         pygame.display.set_icon(icon)
 
         if level > 4:
-            speed = LEVEL[4][0] - 50 * (level - 4)
+            speed = LEVEL[4]["speed"] - 50 * (level - 4)
             if level > 22:
                 speed = 100
             level = 4
         else:
-            speed = LEVEL[level][0]
+            speed = LEVEL[level]["speed"]
 
         self.level = level
 
@@ -39,7 +49,7 @@ class Game:
                         Objects.Bunker(640 - Objects.Bunker(0).width)]
         self.enemies = []
         self.enemy_direction = 1
-        self.initialize_enemies(LEVEL[level][1], LEVEL[level][2])
+        self.initialize_enemies(LEVEL[level]["rows"], LEVEL[level]["cols"])
         self.enemy_bullet = Objects.Bullet()
         self.mystery_ship = Objects.MysteryShip()
 
