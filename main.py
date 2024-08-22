@@ -2,11 +2,7 @@
 from Game import Game
 
 if __name__ == '__main__':
-    try:
-        game = Game(0, 0)
-        game.run()
-        pygame.quit()
-    except Exception as e:
-        print(f"Извините за недразумение :( "
-              f"\nНапишите, пожалуйста, в поддержку прикрепив код ошибки : {e}")
+    game = Game(0, 0)
+    game.run()
+    pygame.quit()
 

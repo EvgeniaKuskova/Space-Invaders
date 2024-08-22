@@ -1,6 +1,8 @@
 ﻿import pygame
 from Objects import Objects
 import random
+import json
+import datetime
 
 WIDTH = 700
 HEIGHT = 500
@@ -22,7 +24,13 @@ class Game:
         pygame.display.set_icon(icon)
 
         if level > 4:
+            speed = LEVEL[4][0] - 50 * (level - 4)
+            if level > 22:
+                speed = 100
             level = 4
+        else:
+            speed = LEVEL[level][0]
+
         self.level = level
 
         self.ship = Objects.Ship()
@@ -44,11 +52,12 @@ class Game:
         self.mystery_ship_timer = pygame.USEREVENT + 3
         pygame.time.set_timer(self.mystery_ship_timer, 15000)
         pygame.time.set_timer(self.enemy_timer, 1000)
-        pygame.time.set_timer(self.enemy_bullet_timer, LEVEL[level][0])
+        pygame.time.set_timer(self.enemy_bullet_timer, speed)
 
         self.score = score
         self.gameplay = True
-        self.start = False
+        self.menu = False
+        self.statistic = False
 
         self.hearts = []
         for i in range(3):
@@ -71,13 +80,16 @@ class Game:
             y += 50
 
     def run(self):
-        self.start = True
+        self.menu = True
         running = True
         while running:
             self.screen.fill((0, 0, 0))
 
-            if self.start:
+            if self.menu:
                 self.draw_menu()
+
+            elif self.statistic:
+                self.draw_statistic()
 
             elif self.gameplay:
                 self.check_keys()
@@ -92,16 +104,19 @@ class Game:
 
             else:
                 self.draw_lose_screen()
+                if self.score > 0:
+                    self.update_high_scores()
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
+                    self.update_high_scores()
                     running = False
-                if self.gameplay and not self.start:
+                if self.gameplay and not self.menu:
                     if event.type == self.enemy_timer:
                         for enemy in self.enemies:
                             enemy.x += enemy.speed * self.enemy_direction
                     if event.type == self.enemy_bullet_timer:
-                        self.enemy_bullet.is_shutting = True
+                        self.enemy_bullet.is_shooting = True
                         number = random.randint(0, len(self.enemies) - 1)
                         self.enemy_bullet.x = self.enemies[number].x + self.enemies[number].width / 2
                         self.enemy_bullet.y = self.enemies[number].y
@@ -112,17 +127,40 @@ class Game:
             self.clock.tick(FPS)
 
     def draw_menu(self):
-        text_start = self.big_font.render('CLICK TO START', True, 'white')
-        self.screen.blit(text_start, (100, 180))
-        text_start_rect = text_start.get_rect(topleft=(100, 180))
+        text_start = Objects.Text(self.font, 'CLICK TO START', 'white', 420, self.screen)
+        text_high_score = Objects.Text(self.font, 'HIGH SCORES', 'green', 360, self.screen)
+        Objects.Text(self.big_font, "SPACE INVADERS", "red", 50, self.screen)
         mouse = pygame.mouse.get_pos()
-        if text_start_rect.collidepoint(mouse) and pygame.mouse.get_pressed()[0] == 1:
+        if text_start.rect.collidepoint(mouse) and pygame.mouse.get_pressed()[0] == 1:
             self.gameplay = True
-            self.start = False
+            self.menu = False
+        if text_high_score.rect.collidepoint(mouse) and pygame.mouse.get_pressed()[0] == 1:
+            self.statistic = True
+            self.menu = False
+        picture = pygame.image.load("images/menu.png").convert_alpha()
+        scaled_picture = pygame.transform.scale(picture, (picture.get_width() * 3,
+                                                          picture.get_height() * 3))
+        self.screen.blit(scaled_picture, ((WIDTH - scaled_picture.get_width()) // 2, 150))
+
+    def draw_statistic(self):
+        Objects.Text(self.big_font, "TOP 3", "green", 40, self.screen)
+        text_return = Objects.Text(self.font, "CLICK TO RETURN MENU", "green",
+                                   400, self.screen)
+        mouse = pygame.mouse.get_pos()
+        if text_return.rect.collidepoint(mouse) and pygame.mouse.get_pressed()[0] == 1:
+            self.menu = True
+            self.statistic = False
+        high_scores = self.load_high_scores()
+        high_scores.sort(key=lambda x: x['score'], reverse=True)
+        high_scores = high_scores[:3]
+        y = 150
+        for score in high_scores:
+            score_text = f"{score['score']} - {score['date']}"
+            Objects.Text(self.font, score_text, "white", y, self.screen)
+            y += 70
 
     def draw_game(self):
-        text_score = self.font.render('SCORE', True, 'white')
-        self.screen.blit(text_score, (40, 20))
+        Objects.Text(self.font, 'SCORE', 'white', 20, self.screen, 40)
         self.screen.blit(self.font.render(str(self.score), True, 'white'),
                          (165, 20))
         for bunker in self.bunkers:
@@ -134,14 +172,17 @@ class Game:
             self.mystery_ship.draw(self.screen)
 
     def draw_lose_screen(self):
-        text_lose = self.big_font.render('YOU LOSE', True, 'red')
-        text_restart = self.font.render('CLICK TO TRY AGAIN', True, 'white')
-        self.screen.blit(text_lose, (200, 180))
-        self.screen.blit(text_restart, (195, 400))
-        text_restart_rect = text_restart.get_rect(topleft=(195, 400))
+        Objects.Text(self.big_font, 'YOU LOSE', 'red', 150, self.screen)
+        text_restart = Objects.Text(self.big_font, 'CLICK TO TRY AGAIN', 'white',
+                                    250, self.screen)
+        text_return = Objects.Text(self.font, "CLICK TO RETURN MENU", "green",
+                                   420, self.screen)
         mouse = pygame.mouse.get_pos()
-        if text_restart_rect.collidepoint(mouse) and pygame.mouse.get_pressed()[0] == 1:
+        if text_restart.rect.collidepoint(mouse) and pygame.mouse.get_pressed()[0] == 1:
             self.__init__(0, 0)
+        if text_return.rect.collidepoint(mouse) and pygame.mouse.get_pressed()[0] == 1:
+            self.__init__(0, 0)
+            self.menu = True
 
     def check_enemy_direction(self):
         leftmost_enemy = min(self.enemies, key=lambda e: e.x)
@@ -173,7 +214,7 @@ class Game:
         for bunker in self.bunkers:
             bunker.get_rect()
             if self.enemy_bullet.rect.colliderect(bunker.rect):
-                self.enemy_bullet.is_shutting = False
+                self.enemy_bullet.is_shooting = False
 
             if self.bullet.y >= bunker.y and bunker.check_bullet_in_bunker(self.bullet):
                 self.bullet.reset(self.ship)
@@ -193,22 +234,22 @@ class Game:
             self.ship.x -= self.ship.speed
         if keys[pygame.K_RIGHT] and self.ship.x < WIDTH - 20 - self.ship.width:
             self.ship.x += self.ship.speed
-        if keys[pygame.K_SPACE] and not self.bullet.is_shutting:
+        if keys[pygame.K_SPACE] and not self.bullet.is_shooting:
             self.bullet.x = self.ship.x + self.ship.width / 2 - self.bullet.width / 2
             self.bullet.draw(self.screen)
-            self.bullet.is_shutting = True
+            self.bullet.is_shooting = True
 
     def move_bullet(self):
-        if self.bullet.is_shutting:
+        if self.bullet.is_shooting:
             self.bullet.y -= self.bullet.speed
             self.bullet.draw(self.screen)
             if self.bullet.y < 0:
                 self.bullet.reset(self.ship)
 
-        if self.enemy_bullet.is_shutting:
+        if self.enemy_bullet.is_shooting:
             self.enemy_bullet.draw(self.screen)
             if self.enemy_bullet.y > HEIGHT:
-                self.enemy_bullet.is_shutting = False
+                self.enemy_bullet.is_shooting = False
             else:
                 self.enemy_bullet.y += 10
 
@@ -217,5 +258,26 @@ class Game:
         self.mystery_ship.get_rect()
         if self.mystery_ship.rect.colliderect(self.bullet.rect):
             self.score += self.mystery_ship.cost
+            self.bullet.reset(self.ship)
             self.mystery_ship.is_moving = False
             self.mystery_ship.x = WIDTH
+
+    @staticmethod
+    def save_scores(high_scores):
+        with open('high_scores.json', 'w') as file:
+            json.dump(high_scores, file, indent=4)
+
+    @staticmethod
+    def load_high_scores():
+        try:
+            with open('high_scores.json', 'r') as file:
+                return json.load(file)
+        except FileNotFoundError:
+            return []
+
+    def update_high_scores(self):
+        scores = self.load_high_scores()
+        scores.append({'score': self.score, 'date': datetime.datetime.now().strftime("%Y-%m-%d")})
+        self.score = 0
+        self.save_scores(scores)
+

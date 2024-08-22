@@ -40,11 +40,11 @@ class Bullet(Object):
     def __init__(self):
         super().__init__('images/bullet.png', SCALE, 0, 0)
         self.y = 400 - self.height
-        self.is_shutting = False
+        self.is_shooting = False
         self.speed = 15
 
     def reset(self, ship):
-        self.is_shutting = False
+        self.is_shooting = False
         self.y = ship.y - self.height
 
 
@@ -78,3 +78,14 @@ class MysteryShip(Enemy):
         else:
             self.is_moving = False
 
+
+class Text:
+    def __init__(self, font, text, color, y, screen, x=None):
+        self.text = font.render(text, True, color)
+        if x is None:
+            self.x = (WIDTH - self.text.get_width()) // 2
+        else:
+            self.x = x
+        self.y = y
+        screen.blit(self.text, (self.x, self.y))
+        self.rect = self.text.get_rect(topleft=(self.x, self.y))
