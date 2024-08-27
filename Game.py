@@ -26,7 +26,7 @@ LEVEL = {0: {"speed": 2500,
 
 
 class Game:
-    def __init__(self, score: int, level: int):
+    def __init__(self, score: int, level: int, restart=False, open_menu=True):
         pygame.init()
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
         pygame.display.set_caption("Space Invaders")
@@ -65,8 +65,9 @@ class Game:
         pygame.time.set_timer(self.enemy_bullet_timer, speed)
 
         self.score = score
-        self.gameplay = True
-        self.menu = False
+        self.gameplay = restart
+        self.menu = open_menu
+        self.lose = False
         self.statistic = False
 
         self.hearts = []
@@ -90,7 +91,6 @@ class Game:
             y += 50
 
     def run(self):
-        self.menu = True
         running = True
         while running:
             self.screen.fill((0, 0, 0))
@@ -112,7 +112,7 @@ class Game:
                 self.check_kill_mystery_ship()
                 self.draw_game()
 
-            else:
+            elif self.lose:
                 self.draw_lose_screen()
                 if self.score > 0:
                     self.update_high_scores()
@@ -135,16 +135,17 @@ class Game:
                         self.mystery_ship.x = WIDTH
             pygame.display.update()
             self.clock.tick(FPS)
+        pygame.quit()
 
     def draw_menu(self):
-        text_start = Objects.Text(self.font, 'CLICK TO START', 'white', 420, self.screen)
+        text_start = Objects.Text(self.font, 'CLICK TO START', 'white', 440, self.screen)
         text_high_score = Objects.Text(self.font, 'HIGH SCORES', 'green', 360, self.screen)
         Objects.Text(self.big_font, "SPACE INVADERS", "red", 50, self.screen)
         mouse = pygame.mouse.get_pos()
         if text_start.rect.collidepoint(mouse) and pygame.mouse.get_pressed()[0] == 1:
             self.gameplay = True
             self.menu = False
-        if text_high_score.rect.collidepoint(mouse) and pygame.mouse.get_pressed()[0] == 1:
+        elif text_high_score.rect.collidepoint(mouse) and pygame.mouse.get_pressed()[0] == 1:
             self.statistic = True
             self.menu = False
         picture = pygame.image.load("images/menu.png").convert_alpha()
@@ -160,6 +161,7 @@ class Game:
         if text_return.rect.collidepoint(mouse) and pygame.mouse.get_pressed()[0] == 1:
             self.menu = True
             self.statistic = False
+            return
         high_scores = self.load_high_scores()
         high_scores.sort(key=lambda x: x['score'], reverse=True)
         high_scores = high_scores[:3]
@@ -183,16 +185,15 @@ class Game:
 
     def draw_lose_screen(self):
         Objects.Text(self.big_font, 'YOU LOSE', 'red', 150, self.screen)
-        text_restart = Objects.Text(self.big_font, 'CLICK TO TRY AGAIN', 'white',
+        text_restart = Objects.Text(self.font, 'CLICK TO TRY AGAIN', 'white',
                                     250, self.screen)
         text_return = Objects.Text(self.font, "CLICK TO RETURN MENU", "green",
-                                   420, self.screen)
+                                   380, self.screen)
         mouse = pygame.mouse.get_pos()
         if text_restart.rect.collidepoint(mouse) and pygame.mouse.get_pressed()[0] == 1:
-            self.__init__(0, 0)
+            self.reset_game(0, 0, restart=True, open_menu=False)
         if text_return.rect.collidepoint(mouse) and pygame.mouse.get_pressed()[0] == 1:
-            self.__init__(0, 0)
-            self.menu = True
+            self.reset_game(0, 0)
 
     def check_enemy_direction(self):
         leftmost_enemy = min(self.enemies, key=lambda e: e.x)
@@ -217,7 +218,7 @@ class Game:
             del self.enemies[index]
 
         if not self.enemies:
-            self.__init__(self.score, self.level + 1)
+            self.reset_game(self.score, self.level + 1, restart=True, open_menu=False)
 
     def check_conflict_bullet_and_bunker(self):
         self.enemy_bullet.get_rect()
@@ -237,6 +238,7 @@ class Game:
                 self.ship.reset(self.clock)
             else:
                 self.gameplay = False
+                self.lose = True
 
     def check_keys(self):
         keys = pygame.key.get_pressed()
@@ -291,3 +293,33 @@ class Game:
         self.score = 0
         self.save_scores(scores)
 
+    def reset_game(self, score: int, level: int, restart=False, open_menu=True):
+        if level > 4:
+            speed = LEVEL[4]["speed"] - 50 * (level - 4)
+            if level > 22:
+                speed = 100
+            level = 4
+        else:
+            speed = LEVEL[level]["speed"]
+
+        self.level = level
+
+        self.ship.reset(self.clock)
+        self.bullet.is_shooting = False
+        self.enemies = []
+        self.enemy_direction = 1
+        self.initialize_enemies(LEVEL[level]["rows"], LEVEL[level]["cols"])
+        self.enemy_bullet.is_shooting = False
+        self.mystery_ship.is_moving = False
+
+        self.score = score
+        self.gameplay = restart
+        self.menu = open_menu
+        self.lose = False
+        self.statistic = False
+
+        self.hearts = []
+        for i in range(3):
+            self.hearts.append(Objects.Object('images/heart.png',
+                                              2, 530 + 40 * i, 30))
+        pygame.time.set_timer(self.enemy_bullet_timer, speed)
