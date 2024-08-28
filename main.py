@@ -1,8 +1,8 @@
-﻿import pygame
-from Game import Game
+﻿from Game import Game
 
 if __name__ == '__main__':
-    game = Game(0, 0)
-    game.run()
-    del game
-
+    try:
+        game = Game(0, 0)
+        game.run()
+    except Exception as e:
+        print(f"Извините за недразумение, обратитесь в поддержку, прикрепив текст ошибки {e}")
