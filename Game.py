@@ -69,6 +69,7 @@ class Game:
         self.menu = open_menu
         self.lose = False
         self.statistic = False
+        self.pause = False
 
         self.hearts = []
         for i in range(3):
@@ -117,6 +118,9 @@ class Game:
                 if self.score > 0:
                     self.update_high_scores()
 
+            elif self.pause:
+                self.draw_pause_screen()
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.update_high_scores()
@@ -139,8 +143,8 @@ class Game:
 
     def draw_menu(self):
         text_start = Objects.Text(self.font, 'CLICK TO START', 'white', 440, self.screen)
-        text_high_score = Objects.Text(self.font, 'HIGH SCORES', 'green', 360, self.screen)
-        Objects.Text(self.big_font, "SPACE INVADERS", "red", 50, self.screen)
+        text_high_score = Objects.Text(self.font, 'HIGH SCORES', 'green', 365, self.screen)
+        Objects.Text(self.big_font, "SPACE INVADERS", "red", 30, self.screen)
         mouse = pygame.mouse.get_pos()
         if text_start.rect.collidepoint(mouse) and pygame.mouse.get_pressed()[0] == 1:
             self.gameplay = True
@@ -151,7 +155,7 @@ class Game:
         picture = pygame.image.load("images/menu.png").convert_alpha()
         scaled_picture = pygame.transform.scale(picture, (picture.get_width() * 3,
                                                           picture.get_height() * 3))
-        self.screen.blit(scaled_picture, ((WIDTH - scaled_picture.get_width()) // 2, 150))
+        self.screen.blit(scaled_picture, ((WIDTH - scaled_picture.get_width()) // 2, 120))
 
     def draw_statistic(self):
         Objects.Text(self.big_font, "TOP 3", "green", 40, self.screen)
@@ -193,6 +197,20 @@ class Game:
         if text_restart.rect.collidepoint(mouse) and pygame.mouse.get_pressed()[0] == 1:
             self.reset_game(0, 0, restart=True, open_menu=False)
         if text_return.rect.collidepoint(mouse) and pygame.mouse.get_pressed()[0] == 1:
+            self.reset_game(0, 0)
+
+    def draw_pause_screen(self):
+        Objects.Text(self.big_font, 'PAUSE', 'white', 50, self.screen)
+        text_continue = Objects.Text(self.big_font, 'CLICK TO CONTINUE', 'green',
+                                     200, self.screen)
+        text_return = Objects.Text(self.font, "CLICK TO RETURN MENU", "white",
+                                   400, self.screen)
+        mouse = pygame.mouse.get_pos()
+        if text_continue.rect.collidepoint(mouse) and pygame.mouse.get_pressed()[0] == 1:
+            self.gameplay = True
+            self.pause = False
+        if text_return.rect.collidepoint(mouse) and pygame.mouse.get_pressed()[0] == 1:
+            self.update_high_scores()
             self.reset_game(0, 0)
 
     def check_enemy_direction(self):
@@ -250,6 +268,9 @@ class Game:
             self.bullet.x = self.ship.x + self.ship.width / 2 - self.bullet.width / 2
             self.bullet.draw(self.screen)
             self.bullet.is_shooting = True
+        if keys[pygame.K_ESCAPE]:
+            self.gameplay = False
+            self.pause = True
 
     def move_bullet(self):
         if self.bullet.is_shooting:
@@ -317,6 +338,7 @@ class Game:
         self.menu = open_menu
         self.lose = False
         self.statistic = False
+        self.pause = False
 
         self.hearts = []
         for i in range(3):
