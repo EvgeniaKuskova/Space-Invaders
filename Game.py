@@ -4,6 +4,8 @@ import random
 import json
 import datetime
 
+PATH_TO_IMAGES = 'images/'
+PATH_TO_FONTS = 'fonts/'
 WIDTH = 700
 HEIGHT = 500
 FPS = 30
@@ -30,7 +32,7 @@ class Game:
         pygame.init()
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
         pygame.display.set_caption("Space Invaders")
-        icon = pygame.image.load('images/icon.png').convert_alpha()
+        icon = pygame.image.load(PATH_TO_IMAGES + 'icon.png').convert_alpha()
         pygame.display.set_icon(icon)
 
         if level > 4:
@@ -53,8 +55,8 @@ class Game:
         self.enemy_bullet = Objects.Bullet()
         self.mystery_ship = Objects.MysteryShip()
 
-        self.font = pygame.font.Font('fonts/font.ttf', 20)
-        self.big_font = pygame.font.Font('fonts/font.ttf', 40)
+        self.font = pygame.font.Font(PATH_TO_FONTS + 'font.ttf', 20)
+        self.big_font = pygame.font.Font(PATH_TO_FONTS + 'font.ttf', 40)
 
         self.clock = pygame.time.Clock()
         self.enemy_timer = pygame.USEREVENT + 1
@@ -73,7 +75,7 @@ class Game:
 
         self.hearts = []
         for i in range(3):
-            self.hearts.append(Objects.Object('images/heart.png',
+            self.hearts.append(Objects.Object(PATH_TO_IMAGES + 'heart.png',
                                               2, 530 + 40 * i, 30))
 
     def initialize_enemies(self, rows: int, cols: int):
@@ -82,10 +84,10 @@ class Game:
         for i in range(rows):
             for j in range(cols):
                 if i == 0 and rows > 2:
-                    self.enemies.append(Objects.Enemy('images/enemy_second_type.png',
+                    self.enemies.append(Objects.Enemy(PATH_TO_IMAGES + 'enemy_second_type.png',
                                                       x, y, 10, 20))
                 else:
-                    self.enemies.append(Objects.Enemy('images/enemy_first_type.png',
+                    self.enemies.append(Objects.Enemy(PATH_TO_IMAGES + 'enemy_first_type.png',
                                                       x, y, 10, 10))
                 x += 45
             x = 40
@@ -152,7 +154,7 @@ class Game:
         elif text_high_score.rect.collidepoint(mouse) and pygame.mouse.get_pressed()[0] == 1:
             self.statistic = True
             self.menu = False
-        picture = pygame.image.load("images/menu.png").convert_alpha()
+        picture = pygame.image.load(PATH_TO_IMAGES + "menu.png").convert_alpha()
         scaled_picture = pygame.transform.scale(picture, (picture.get_width() * 3,
                                                           picture.get_height() * 3))
         self.screen.blit(scaled_picture, ((WIDTH - scaled_picture.get_width()) // 2, 120))
@@ -194,7 +196,9 @@ class Game:
         text_return = Objects.Text(self.font, "CLICK TO RETURN MENU", "green",
                                    380, self.screen)
         mouse = pygame.mouse.get_pos()
-        if text_restart.rect.collidepoint(mouse) and pygame.mouse.get_pressed()[0] == 1:
+        a = text_restart.rect.collidepoint(mouse)
+        b = pygame.mouse.get_pressed()[0] == 1
+        if a and b:
             self.reset_game(0, 0, restart=True, open_menu=False)
         if text_return.rect.collidepoint(mouse) and pygame.mouse.get_pressed()[0] == 1:
             self.reset_game(0, 0)
@@ -227,7 +231,7 @@ class Game:
             enemy.get_rect()
             if self.bullet.rect.colliderect(enemy.rect):
                 enemies_to_remove.append(i)
-                self.bullet.reset(self.ship)
+                self.bullet.reset_ship_bullet(self.ship)
                 self.score += enemy.cost
             else:
                 enemy.draw(self.screen)
@@ -239,14 +243,21 @@ class Game:
             self.reset_game(self.score, self.level + 1, restart=True, open_menu=False)
 
     def check_conflict_bullet_and_bunker(self):
-        self.enemy_bullet.get_rect()
         for bunker in self.bunkers:
+            self.enemy_bullet.get_rect()
             bunker.get_rect()
             if self.enemy_bullet.rect.colliderect(bunker.rect):
-                self.enemy_bullet.is_shooting = False
+                self.enemy_bullet.reset_enemy_bullet()
+                if bunker.destroy():
+                    self.bunkers.remove(bunker)
 
-            if self.bullet.y >= bunker.y and bunker.check_bullet_in_bunker(self.bullet):
-                self.bullet.reset(self.ship)
+        for bunker in self.bunkers:
+            self.bullet.get_rect()
+            bunker.get_rect()
+            if self.bullet.rect.colliderect(bunker.rect):
+                self.bullet.reset_ship_bullet(self.ship)
+                if bunker.destroy():
+                    self.bunkers.remove(bunker)
 
     def check_kill_ship(self):
         self.ship.get_rect()
@@ -277,7 +288,7 @@ class Game:
             self.bullet.y -= self.bullet.speed
             self.bullet.draw(self.screen)
             if self.bullet.y < 0:
-                self.bullet.reset(self.ship)
+                self.bullet.reset_ship_bullet(self.ship)
 
         if self.enemy_bullet.is_shooting:
             self.enemy_bullet.draw(self.screen)
@@ -291,7 +302,7 @@ class Game:
         self.mystery_ship.get_rect()
         if self.mystery_ship.rect.colliderect(self.bullet.rect):
             self.score += self.mystery_ship.cost
-            self.bullet.reset(self.ship)
+            self.bullet.reset_ship_bullet(self.ship)
             self.mystery_ship.is_moving = False
             self.mystery_ship.x = WIDTH
 
@@ -309,7 +320,11 @@ class Game:
             return []
 
     def update_high_scores(self):
+        if self.score == 0:
+            return
         scores = self.load_high_scores()
+        if scores is None:
+            scores = []
         scores.append({'score': self.score, 'date': datetime.datetime.now().strftime("%Y-%m-%d")})
         self.score = 0
         self.save_scores(scores)
@@ -326,11 +341,11 @@ class Game:
         self.level = level
 
         self.ship.reset(self.clock)
-        self.bullet.is_shooting = False
+        self.bullet.reset_ship_bullet(self.ship)
         self.enemies = []
         self.enemy_direction = 1
         self.initialize_enemies(LEVEL[level]["rows"], LEVEL[level]["cols"])
-        self.enemy_bullet.is_shooting = False
+        self.enemy_bullet.reset_enemy_bullet()
         self.mystery_ship.is_moving = False
 
         self.score = score
@@ -342,6 +357,8 @@ class Game:
 
         self.hearts = []
         for i in range(3):
-            self.hearts.append(Objects.Object('images/heart.png',
+            self.hearts.append(Objects.Object(PATH_TO_IMAGES + 'heart.png',
                                               2, 530 + 40 * i, 30))
+        self.bunkers = [Objects.Bunker(60), Objects.Bunker(308),
+                        Objects.Bunker(640 - Objects.Bunker(0).width)]
         pygame.time.set_timer(self.enemy_bullet_timer, speed)

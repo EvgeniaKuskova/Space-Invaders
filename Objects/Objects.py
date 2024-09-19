@@ -1,9 +1,5 @@
 ﻿import pygame
-
-
-WIDTH = 700
-HEIGHT = 500
-SCALE = 4
+import Game
 
 
 class Object:
@@ -26,38 +22,49 @@ class Object:
 
 class Ship(Object):
     def __init__(self):
-        super().__init__('images/ship.png', SCALE, 76, 392)
+        super().__init__(Game.PATH_TO_IMAGES + 'ship.png', Game.SCALE, 76, 450)
         self.speed = 5
 
     def reset(self, clock):
         self.x = 76
-        self.y = 392
+        self.y = 450
         clock.tick(10)
 
 
 class Bullet(Object):
     def __init__(self):
-        super().__init__('images/bullet.png', SCALE, 0, 0)
+        super().__init__(Game.PATH_TO_IMAGES + 'bullet.png', Game.SCALE, 0, 0)
         self.y = 400 - self.height
         self.is_shooting = False
         self.speed = 15
 
-    def reset(self, ship):
+    def reset_ship_bullet(self, ship):
         self.is_shooting = False
         self.y = ship.y - self.height
+
+    def reset_enemy_bullet(self):
+        self.is_shooting = False
+        self.y = 0
 
 
 class Bunker(Object):
     def __init__(self, x: int):
-        super().__init__('images/bunker.png', 5, x, 350)
+        super().__init__(Game.PATH_TO_IMAGES + 'bunker.png', 5, x, 350)
+        self.condition = 0
 
-    def check_bullet_in_bunker(self, bullet):
-        return self.x <= bullet.x < self.x + self.width
+    def destroy(self):
+        self.condition += 1
+        if self.condition < 5:
+            image_path = f"bunker_{self.condition}.png"
+            self.image = pygame.image.load(Game.PATH_TO_IMAGES + image_path).convert_alpha()
+            self.scaled_image = pygame.transform.scale(self.image, (self.image.get_width() * 5,
+                                                                    self.image.get_height() * 5))
+        return self.condition > 4
 
 
 class Enemy(Object):
     def __init__(self, path: str, x: int, y: int, speed: int, cost: int):
-        super().__init__(path, SCALE, x, y)
+        super().__init__(path, Game.SCALE, x, y)
         self.speed = speed
         self.rect = self.scaled_image.get_rect(topleft=(self.x, self.y))
         self.cost = cost
@@ -67,7 +74,7 @@ class Enemy(Object):
 
 class MysteryShip(Enemy):
     def __init__(self):
-        super().__init__('images/mystery_ship.png', WIDTH, 100, 3, 40)
+        super().__init__(Game.PATH_TO_IMAGES + 'mystery_ship.png', Game.WIDTH, 100, 3, 40)
         self.is_moving = False
 
     def draw(self, screen):
@@ -82,7 +89,7 @@ class Text:
     def __init__(self, font, text, color, y, screen, x=None):
         self.text = font.render(text, True, color)
         if x is None:
-            self.x = (WIDTH - self.text.get_width()) // 2
+            self.x = (Game.WIDTH - self.text.get_width()) // 2
         else:
             self.x = x
         self.y = y
