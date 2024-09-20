@@ -6,7 +6,7 @@
 >-pip install -r requirements.txt
 
 Для запуска программы в командной строке введите строку, представленную ниже и нажмите Enter:
->-python + путь_до_папки_keyboard_trainer\main.py
+>-python + путь_до_папки_Space-Invaders\main.py
 
 Приведем пример строки запуска:
 >-python C:\Users\КусЯ\Desktop\Space-Invaders\main.py
