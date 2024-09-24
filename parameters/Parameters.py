@@ -1,5 +1,6 @@
-﻿PATH_TO_IMAGES = 'images/'
-PATH_TO_FONTS = 'fonts/'
+﻿IMAGES_FOLDER = 'images'
+FONTS_FOLDER = 'fonts'
+DATA_FOLDER = 'data'
 WIDTH = 700
 HEIGHT = 500
 FPS = 30

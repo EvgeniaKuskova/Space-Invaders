@@ -4,6 +4,7 @@ import json
 import datetime
 from objects import Ship, Bullet, Bunker, Enemy, MysteryShip, Text, Object
 from parameters import Parameters
+import os
 
 
 class Game:
@@ -11,7 +12,9 @@ class Game:
         pygame.init()
         self.screen = pygame.display.set_mode((Parameters.WIDTH, Parameters.HEIGHT))
         pygame.display.set_caption("Space Invaders")
-        icon = pygame.image.load(Parameters.PATH_TO_IMAGES + 'icon.png').convert_alpha()
+
+        icon_path = os.path.join(Parameters.IMAGES_FOLDER, 'icon.png')
+        icon = pygame.image.load(icon_path).convert_alpha()
         pygame.display.set_icon(icon)
 
         if level > 4:
@@ -34,8 +37,9 @@ class Game:
         self.enemy_bullet = Bullet.Bullet()
         self.mystery_ship = MysteryShip.MysteryShip()
 
-        self.font = pygame.font.Font(Parameters.PATH_TO_FONTS + 'font.ttf', 20)
-        self.big_font = pygame.font.Font(Parameters.PATH_TO_FONTS + 'font.ttf', 40)
+        font_path = os.path.join(Parameters.FONTS_FOLDER, 'font.ttf')
+        self.font = pygame.font.Font(font_path, 20)
+        self.big_font = pygame.font.Font(font_path, 40)
 
         self.clock = pygame.time.Clock()
         self.enemy_timer = pygame.USEREVENT + 1
@@ -54,8 +58,8 @@ class Game:
 
         self.hearts = []
         for i in range(3):
-            self.hearts.append(Object.Object(Parameters.PATH_TO_IMAGES + 'heart.png',
-                                             2, 530 + 40 * i, 30))
+            heart_image_path = os.path.join(Parameters.IMAGES_FOLDER, 'heart.png')
+            self.hearts.append(Object.Object(heart_image_path, 2, 530 + 40 * i, 30))
 
     def initialize_enemies(self, rows: int, cols: int):
         x = 40
@@ -63,11 +67,12 @@ class Game:
         for i in range(rows):
             for j in range(cols):
                 if i == 0 and rows > 2:
-                    self.enemies.append(Enemy.Enemy(Parameters.PATH_TO_IMAGES + 'enemy_second_type.png',
-                                                    x, y, 10, 20))
+                    enemy_image_path = os.path.join(Parameters.IMAGES_FOLDER, 'enemy_second_type.png')
+                    cost = 20
                 else:
-                    self.enemies.append(Enemy.Enemy(Parameters.PATH_TO_IMAGES + 'enemy_first_type.png',
-                                                    x, y, 10, 10))
+                    enemy_image_path = os.path.join(Parameters.IMAGES_FOLDER, 'enemy_first_type.png')
+                    cost = 10
+                self.enemies.append(Enemy.Enemy(enemy_image_path, x, y, 10, cost))
                 x += 45
             x = 40
             y += 50
@@ -86,6 +91,7 @@ class Game:
             elif self.gameplay:
                 self.enemy_bullet.get_rect()
                 self.bullet.get_rect()
+                self.ship.get_rect()
                 self.check_keys()
                 self.move_bullet()
                 self.bullet.get_rect()
@@ -135,7 +141,7 @@ class Game:
         elif text_high_score.rect.collidepoint(mouse) and pygame.mouse.get_pressed()[0] == 1:
             self.statistic = True
             self.menu = False
-        picture = pygame.image.load(Parameters.PATH_TO_IMAGES + "menu.png").convert_alpha()
+        picture = pygame.image.load(os.path.join(Parameters.IMAGES_FOLDER, "menu.png")).convert_alpha()
         scaled_picture = pygame.transform.scale(picture, (picture.get_width() * 3,
                                                           picture.get_height() * 3))
         self.screen.blit(scaled_picture, ((Parameters.WIDTH - scaled_picture.get_width()) // 2, 115))
@@ -143,7 +149,7 @@ class Game:
     def draw_statistic(self):
         Text.Text(self.big_font, "TOP 3", "green", 40, self.screen)
         text_return = Text.Text(self.font, "CLICK TO RETURN MENU", "green",
-                                   400, self.screen)
+                                400, self.screen)
         mouse = pygame.mouse.get_pos()
         if text_return.rect.collidepoint(mouse) and pygame.mouse.get_pressed()[0] == 1:
             self.menu = True
@@ -173,9 +179,9 @@ class Game:
     def draw_lose_screen(self):
         Text.Text(self.big_font, 'YOU LOSE', 'red', 150, self.screen)
         text_restart = Text.Text(self.font, 'CLICK TO TRY AGAIN', 'white',
-                                    250, self.screen)
+                                250, self.screen)
         text_return = Text.Text(self.font, "CLICK TO RETURN MENU", "green",
-                                   380, self.screen)
+                                380, self.screen)
         mouse = pygame.mouse.get_pos()
         a = text_restart.rect.collidepoint(mouse)
         b = pygame.mouse.get_pressed()[0] == 1
@@ -233,12 +239,11 @@ class Game:
                         bunkers.remove(bunker)
 
     def check_kill_ship(self):
-        self.enemy_bullet.get_rect()
-        self.ship.get_rect()
         if self.enemy_bullet.rect.colliderect(self.ship.rect):
             if len(self.hearts) > 1:
                 self.hearts.pop(0)
-                self.ship.reset(self.clock)
+                self.enemy_bullet.reset()
+                self.ship.reset()
             else:
                 self.gameplay = False
                 self.lose = True
@@ -282,15 +287,15 @@ class Game:
 
     @staticmethod
     def save_scores(high_scores):
-        with open('data/high_scores.json', 'w') as file:
+        with open(os.path.join(Parameters.DATA_FOLDER, 'high_scores.json'), 'w') as file:
             json.dump(high_scores, file, indent=4)
 
     @staticmethod
     def load_high_scores():
         try:
-            with open('data/high_scores.json', 'r') as file:
+            with open(os.path.join(Parameters.DATA_FOLDER, 'high_scores.json'), 'r') as file:
                 return json.load(file)
-        except FileNotFoundError:
+        except OSError:
             return []
 
     def update_high_scores(self):
@@ -314,7 +319,7 @@ class Game:
 
         self.level = level
 
-        self.ship.reset(self.clock)
+        self.ship.reset()
         self.bullet.reset(self.ship)
         self.enemies = []
         self.enemy_direction = 1
@@ -331,8 +336,8 @@ class Game:
 
         self.hearts = []
         for i in range(3):
-            self.hearts.append(Object.Object(Parameters.PATH_TO_IMAGES + 'heart.png',
-                                             2, 530 + 40 * i, 30))
+            heart_image_path = os.path.join(Parameters.IMAGES_FOLDER, 'heart.png')
+            self.hearts.append(Object.Object(heart_image_path, 2, 530 + 40 * i, 30))
         self.bunkers = [Bunker.Bunker(60), Bunker.Bunker(308),
                         Bunker.Bunker(640 - Bunker.Bunker(0).width)]
         pygame.time.set_timer(self.enemy_bullet_timer, speed)

@@ -1,10 +1,12 @@
 ﻿from objects import Object
 from parameters import Parameters
+import os
 
 
 class Bullet(Object.Object):
     def __init__(self):
-        super().__init__(Parameters.PATH_TO_IMAGES + 'bullet.png', Parameters.SCALE, 0, 0)
+        path = os.path.join(Parameters.IMAGES_FOLDER, 'bullet.png')
+        super().__init__(path, Parameters.SCALE, 0, 0)
         self.y = 400 - self.height
         self.is_shooting = False
         self.speed = 15

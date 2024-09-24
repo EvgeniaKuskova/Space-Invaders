@@ -1,10 +1,12 @@
 ﻿from objects import Enemy
 from parameters import Parameters
+import os
 
 
 class MysteryShip(Enemy.Enemy):
     def __init__(self):
-        super().__init__(Parameters.PATH_TO_IMAGES + 'mystery_ship.png', Parameters.WIDTH, 100, 3, 40)
+        path = os.path.join(Parameters.IMAGES_FOLDER, 'mystery_ship.png')
+        super().__init__(path, Parameters.WIDTH, 100, 3, 40)
         self.is_moving = False
 
     def draw(self, screen):
